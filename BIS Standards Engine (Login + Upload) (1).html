@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BIS Standards Recommendation Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0C2340;--navy-mid:#183A5C;--navy-light:#2A5078;
+  --saffron:#E85D04;--saffron-light:#FFF0E4;--saffron-dark:#C44D03;
+  --teal:#047857;--teal-light:#D1FAE5;
+  --amber:#B45309;--amber-light:#FEF3C7;
+  --red:#B91C1C;--red-light:#FEE2E2;
+  --purple:#6D28D9;--purple-light:#EDE9FE;
+  --bg:#F3F4F6;--surface:#FFFFFF;--surface2:#F9FAFB;
+  --border:#E5E7EB;--border2:#D1D5DB;
+  --t1:#111827;--t2:#4B5563;--t3:#9CA3AF;
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:8px;--r2:12px;
+  --sh:0 1px 3px rgba(0,0,0,.08);--sh2:0 4px 16px rgba(0,0,0,.1);
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B0F19;--surface:#141925;--surface2:#1A2030;
+    --border:#252D3D;--border2:#354055;
+    --t1:#E5E7EB;--t2:#9CA3AF;--t3:#6B7280;
+    --saffron-light:#3D1F05;--teal-light:#052E21;--amber-light:#451A03;
+    --red-light:#450A0A;--purple-light:#2E1065;
+    --sh:0 1px 3px rgba(0,0,0,.3);--sh2:0 4px 16px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B0F19;--surface:#141925;--surface2:#1A2030;
+  --border:#252D3D;--border2:#354055;
+  --t1:#E5E7EB;--t2:#9CA3AF;--t3:#6B7280;
+  --saffron-light:#3D1F05;--teal-light:#052E21;--amber-light:#451A03;
+  --red-light:#450A0A;--purple-light:#2E1065;
+  --sh:0 1px 3px rgba(0,0,0,.3);--sh2:0 4px 16px rgba(0,0,0,.4);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{font-family:var(--font);background:var(--bg);color:var(--t1);line-height:1.6;height:100%}
+
+/* Header */
+.hdr{background:var(--navy);color:#fff;padding:0}
+.hdr-inner{max-width:1180px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-icon{width:34px;height:34px;background:var(--saffron);border-radius:6px;display:flex;align-items:center;justify-content:center;font:700 14px/1 var(--mono);color:#fff}
+.hdr-title{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.hdr-org{font-size:11px;opacity:.7;font-weight:400}
+.hdr-badge{font:500 10px/1 var(--mono);background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+
+/* Hero search */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 50%,var(--navy-light) 100%);padding:40px 24px 48px;color:#fff}
+.hero-inner{max-width:800px;margin:0 auto;text-align:center}
+.hero h1{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+.hero p{font-size:14px;opacity:.75;margin-bottom:24px;max-width:560px;margin-left:auto;margin-right:auto}
+.search-box{display:flex;gap:8px;max-width:700px;margin:0 auto}
+.search-input{flex:1;font:400 15px/1.5 var(--font);padding:12px 18px;border:2px solid rgba(255,255,255,.2);border-radius:var(--r);background:rgba(255,255,255,.1);color:#fff;outline:none;transition:border .15s}
+.search-input:focus{border-color:var(--saffron)}
+.search-input::placeholder{color:rgba(255,255,255,.45)}
+.search-btn{font:600 14px/1 var(--font);padding:0 28px;background:var(--saffron);color:#fff;border:none;border-radius:var(--r);cursor:pointer;transition:background .15s;white-space:nowrap}
+.search-btn:hover{background:var(--saffron-dark)}
+.search-btn:disabled{opacity:.5;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px}
+.chip{font:400 12px/1 var(--font);padding:6px 14px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:20px;cursor:pointer;transition:all .15s}
+.chip:hover{background:var(--saffron);border-color:var(--saffron);color:#fff}
+
+/* Pipeline */
+.pipe-wrap{max-width:1180px;margin:-24px auto 0;padding:0 24px;position:relative;z-index:2}
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh2)}
+.pipe-step{padding:14px 12px;text-align:center;transition:all .4s}
+.pipe-num{font:600 10px/1 var(--mono);display:block;margin-bottom:3px;opacity:.5}
+.pipe-label{font-size:12px;font-weight:600;color:var(--t3)}
+.pipe-step.active{background:var(--saffron-light)}.pipe-step.active .pipe-label{color:var(--saffron)}
+.pipe-step.done{background:var(--teal-light)}.pipe-step.done .pipe-label{color:var(--teal)}
+
+/* Main content */
+.main{max-width:1180px;margin:0 auto;padding:24px}
+
+/* Results layout */
+.results{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+@media(max-width:900px){.results{grid-template-columns:1fr}}
+
+/* Std card */
+.std-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--sh);transition:box-shadow .15s;margin-bottom:12px}
+.std-card:hover{box-shadow:var(--sh2)}
+.std-card.allied{border-left:3px solid var(--navy-light)}
+.std-card.allied-test{border-left-color:var(--teal)}
+.std-card.allied-safety{border-left-color:var(--red)}
+.std-card.allied-component{border-left-color:var(--amber)}
+.std-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.std-is{font:600 13px/1 var(--mono);color:var(--navy);background:rgba(12,35,64,.08);padding:4px 10px;border-radius:4px;white-space:nowrap}
+.std-score{font:600 11px/1 var(--mono);padding:3px 8px;border-radius:4px}
+.score-high{background:var(--teal-light);color:var(--teal)}
+.score-med{background:var(--amber-light);color:var(--amber)}
+.score-low{background:var(--purple-light);color:var(--purple)}
+.std-title{font-size:14px;font-weight:600;line-height:1.4;margin-bottom:4px}
+.std-scope{font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:10px}
+.std-tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:10px;font-weight:500;padding:3px 7px;border-radius:3px}
+.tag-current{background:var(--teal-light);color:var(--teal)}
+.tag-amended{background:var(--amber-light);color:var(--amber)}
+.tag-type{background:var(--surface2);color:var(--t2);border:1px solid var(--border)}
+.tag-cert{background:var(--red-light);color:var(--red)}
+.tag-mand{background:var(--red-light);color:var(--red);font-weight:700}
+.std-reason{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;color:var(--t2);font-style:italic}
+.std-rel{font-size:11px;color:var(--t3);margin-top:6px}
+
+/* Section label */
+.sec-label{font-size:12px;font-weight:700;color:var(--t3);letter-spacing:.3px;margin-bottom:8px}
+
+/* Sidebar */
+.side{display:flex;flex-direction:column;gap:14px}
+.side-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px;box-shadow:var(--sh)}
+.side-title{font-size:12px;font-weight:700;margin-bottom:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat{background:var(--surface2);border-radius:var(--r);padding:10px;text-align:center}
+.stat-val{font:700 22px/1 var(--mono);color:var(--saffron)}
+.stat-lbl{font-size:10px;color:var(--t3);margin-top:3px}
+.graph-box{width:100%;aspect-ratio:4/3;background:var(--surface2);border-radius:var(--r);overflow:hidden}
+.graph-box svg{width:100%;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.legend-i{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--t3)}
+.legend-d{width:7px;height:7px;border-radius:50%}
+.cert-list{display:flex;flex-direction:column;gap:4px}
+.cert-row{display:flex;align-items:center;gap:6px;padding:5px 7px;background:var(--surface2);border-radius:var(--r);font-size:11px;color:var(--t2)}
+.cert-badge{font:500 9px/1 var(--mono);padding:2px 6px;border-radius:3px;white-space:nowrap}
+
+/* Initial & loading states */
+.init{text-align:center;padding:60px 24px}
+.init-icon{font-size:40px;margin-bottom:12px}
+.init-h{font-size:20px;font-weight:700;margin-bottom:6px}
+.init-p{font-size:13px;color:var(--t2);max-width:460px;margin:0 auto}
+.loading{text-align:center;padding:48px 24px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--saffron);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.load-t{font-size:13px;color:var(--t2)}
+.load-s{font-size:11px;color:var(--t3);margin-top:3px}
+
+@media(max-width:640px){
+  .hero h1{font-size:20px}
+  .search-box{flex-direction:column}
+  .search-btn{padding:12px}
+  .main{padding:16px}
+  .pipe{grid-template-columns:1fr 1fr}
+  .login-card{margin:16px;padding:28px 20px}
+}
+
+/* Login Overlay */
+.login-overlay{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,var(--navy) 0%,#0a1628 40%,var(--navy-mid) 100%);display:flex;align-items:center;justify-content:center;transition:opacity .4s,visibility .4s}
+.login-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.login-card{background:var(--surface);border-radius:16px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.login-logo-icon{width:44px;height:44px;background:var(--saffron);border-radius:10px;display:flex;align-items:center;justify-content:center;font:800 18px/1 var(--mono);color:#fff}
+.login-logo-text{font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.3px}
+.login-logo-sub{font-size:11px;color:var(--t3);font-weight:400}
+.login-desc{font-size:13px;color:var(--t2);margin:16px 0 28px;line-height:1.6}
+.login-field{margin-bottom:16px}
+.login-label{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px}
+.login-input{width:100%;font:400 14px/1.5 var(--font);padding:10px 14px;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--t1);outline:none;transition:border .15s}
+.login-input:focus{border-color:var(--saffron)}
+.login-input::placeholder{color:var(--t3)}
+.login-pw-wrap{position:relative}
+.login-pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:var(--t3);padding:2px 4px}
+.login-submit{width:100%;font:600 14px/1 var(--font);padding:12px;background:var(--saffron);color:#fff;border:none;border-radius:var(--r);cursor:pointer;transition:background .15s;margin-top:6px}
+.login-submit:hover{background:var(--saffron-dark)}
+.login-submit:disabled{opacity:.6;cursor:not-allowed}
+.login-error{font-size:12px;color:var(--red);margin-top:10px;display:none;padding:8px 12px;background:var(--red-light);border-radius:var(--r)}
+.login-error.show{display:block}
+.login-creds{margin-top:20px;padding:14px;background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--r)}
+.login-creds-title{font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px}
+.login-cred-row{display:flex;align-items:center;justify-content:space-between;font:400 12px/1.6 var(--mono);color:var(--t2)}
+.login-cred-row span:first-child{color:var(--t3);font-family:var(--font);font-size:11px}
+.login-govt{display:flex;align-items:center;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:10px;color:var(--t3);justify-content:center}
+.login-govt-emblem{font-size:20px}
+
+/* Logout button in header */
+.logout-btn{font:500 11px/1 var(--font);padding:5px 12px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:4px;cursor:pointer;transition:all .15s}
+.logout-btn:hover{background:rgba(255,255,255,.2);color:#fff}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-avatar{width:26px;height:26px;background:var(--saffron);border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 11px/1 var(--font);color:#fff}
+.user-name{font-size:11px;color:rgba(255,255,255,.7)}
+
+/* App content hidden until login */
+.app-content{display:none}
+.app-content.visible{display:block}
+
+/* Upload Section */
+.upload-section{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.upload-divider{display:flex;align-items:center;gap:12px;font-size:11px;color:rgba(255,255,255,.4);font-weight:500}
+.upload-divider::before,.upload-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.15)}
+.upload-zone{position:relative;border:2px dashed rgba(255,255,255,.2);border-radius:var(--r2);padding:20px 16px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(255,255,255,.03)}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--saffron);background:rgba(232,93,4,.08)}
+.upload-zone-icon{font-size:28px;margin-bottom:6px;opacity:.7}
+.upload-zone-text{font-size:13px;color:rgba(255,255,255,.7);line-height:1.5}
+.upload-zone-text span{color:var(--saffron);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.upload-zone-formats{font-size:10px;color:rgba(255,255,255,.35);margin-top:4px}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* File preview card */
+.file-preview{display:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:var(--r);padding:10px 14px}
+.file-preview.show{display:flex;align-items:center;gap:10px}
+.file-icon{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.file-icon.pdf{background:rgba(185,28,28,.2);color:#EF4444}
+.file-icon.docx{background:rgba(37,99,235,.2);color:#3B82F6}
+.file-icon.txt{background:rgba(107,114,128,.2);color:#9CA3AF}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-meta{font-size:10px;color:rgba(255,255,255,.4)}
+.file-status{font-size:10px;font-weight:600;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.file-status.extracting{background:rgba(232,93,4,.2);color:var(--saffron)}
+.file-status.ready{background:rgba(4,120,87,.2);color:#34D399}
+.file-status.error{background:rgba(185,28,28,.2);color:#EF4444}
+.file-remove{background:none;border:none;color:rgba(255,255,255,.35);font-size:16px;cursor:pointer;padding:4px;line-height:1;transition:color .15s}
+.file-remove:hover{color:#EF4444}
+
+/* Extracted text preview */
+.extract-preview{display:none;margin-top:8px}
+.extract-preview.show{display:block}
+.extract-box{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:10px 14px;max-height:100px;overflow-y:auto;font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.extract-label{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.extract-use-btn{font:600 10px/1 var(--font);padding:3px 10px;background:var(--saffron);color:#fff;border:none;border-radius:3px;cursor:pointer}
+.extract-use-btn:hover{background:var(--saffron-dark)}
+
+@media(max-width:640px){
+  .upload-zone{padding:16px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">IS</div>
+      <div>
+        <div class="login-logo-text">BIS Standards Engine</div>
+        <div class="login-logo-sub">AI-Powered Recommendation System</div>
+      </div>
+    </div>
+    <div class="login-desc">Sign in to access the Indian Standards recommendation engine. This portal is for authorized procurement officials, PSE officers, and registered users.</div>
+
+    <div class="login-field">
+      <label class="login-label" for="loginUser">Username or Email</label>
+      <input class="login-input" id="loginUser" type="text" placeholder="Enter your username" autocomplete="username">
+    </div>
+
+    <div class="login-field">
+      <label class="login-label" for="loginPass">Password</label>
+      <div class="login-pw-wrap">
+        <input class="login-input" id="loginPass" type="password" placeholder="Enter your password" autocomplete="current-password">
+        <button class="login-pw-toggle" type="button" onclick="togglePw()" id="pwToggle">👁</button>
+      </div>
+    </div>
+
+    <div class="login-error" id="loginError">Invalid username or password. Please try again.</div>
+
+    <button class="login-submit" id="loginBtn" onclick="doLogin()">Sign In</button>
+
+    <div class="login-creds">
+      <div class="login-creds-title">Demo credentials</div>
+      <div class="login-cred-row"><span>Admin</span> admin / admin123</div>
+      <div class="login-cred-row"><span>Officer</span> officer / bis2026</div>
+      <div class="login-cred-row"><span>Guest</span> guest / guest123</div>
+    </div>
+
+    <div class="login-govt">
+      <span class="login-govt-emblem">🏛️</span>
+      <span>Ministry of Consumer Affairs, Food &amp; Public Distribution<br>Department of Consumer Affairs (DoCA)</span>
+    </div>
+  </div>
+</div>
+
+<!-- APP CONTENT (hidden until login) -->
+<div class="app-content" id="appContent">
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-logo">
+      <div class="hdr-icon">IS</div>
+      <div><div class="hdr-title">BIS Standards Engine</div><div class="hdr-org">Ministry of Consumer Affairs, Dept of Consumer Affairs</div></div>
+    </div>
+    <div class="hdr-right">
+      <span class="hdr-badge">SIH 2026 - PS 26108</span>
+      <div class="user-info" id="userInfo">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span class="user-name" id="userName">Admin</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Find the right Indian Standards, instantly</h1>
+    <p>Describe your product or paste a tender specification. The AI engine recommends applicable BIS standards, test methods, safety standards, and certification requirements.</p>
+    <div class="search-box">
+      <input id="qInput" class="search-input" type="text" placeholder="e.g. LED street luminaires for smart city project">
+      <button id="qBtn" class="search-btn" onclick="run()">Find Standards</button>
+    </div>
+    <div class="chips">
+      <span class="chip" onclick="eg(this)">LED street luminaires for highway</span>
+      <span class="chip" onclick="eg(this)">OPC cement for bridge construction</span>
+      <span class="chip" onclick="eg(this)">stainless steel kitchen utensils</span>
+      <span class="chip" onclick="eg(this)">PVC pipes for water supply</span>
+      <span class="chip" onclick="eg(this)">solar photovoltaic modules</span>
+      <span class="chip" onclick="eg(this)">packaged drinking water</span>
+    </div>
+
+    <!-- Upload Tender Document -->
+    <div class="upload-section">
+      <div class="upload-divider">or upload a tender document</div>
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-zone-icon">📄</div>
+        <div class="upload-zone-text"><span>Click to upload</span> or drag and drop your file here</div>
+        <div class="upload-zone-formats">Supports PDF, DOCX, TXT, DOC (max 10 MB)</div>
+        <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.rtf,.csv" onchange="handleFileSelect(event)">
+      </div>
+      <div class="file-preview" id="filePreview">
+        <div class="file-icon" id="fileIcon">📄</div>
+        <div class="file-info">
+          <div class="file-name" id="fileName">document.pdf</div>
+          <div class="file-meta" id="fileMeta">2.4 MB</div>
+        </div>
+        <span class="file-status extracting" id="fileStatus">Extracting...</span>
+        <button class="file-remove" onclick="removeFile()" title="Remove file">&times;</button>
+      </div>
+      <div class="extract-preview" id="extractPreview">
+        <div class="extract-label">
+          <span>Extracted text from document</span>
+          <button class="extract-use-btn" onclick="useExtractedText()">Use for search</button>
+        </div>
+        <div class="extract-box" id="extractBox"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="pipe-wrap"><div class="pipe" id="pipe" style="display:none">
+  <div class="pipe-step" id="ps1"><span class="pipe-num">1</span><span class="pipe-label">Category Filter</span></div>
+  <div class="pipe-step" id="ps2"><span class="pipe-num">2</span><span class="pipe-label">Semantic Search</span></div>
+  <div class="pipe-step" id="ps3"><span class="pipe-num">3</span><span class="pipe-label">AI Re-ranking</span></div>
+  <div class="pipe-step" id="ps4"><span class="pipe-num">4</span><span class="pipe-label">Graph Expansion</span></div>
+</div></div>
+
+<main class="main"><div id="out">
+  <div class="init"><div class="init-icon">🏛️</div><div class="init-h">AI-Powered Indian Standards Lookup</div><div class="init-p">Enter a product description or tender specification above. The engine uses a 4-stage pipeline to narrow 20,000+ BIS standards down to a precise recommendation package in seconds.</div></div>
+</div></main>
+
+</div><!-- end app-content -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ========== LOGIN SYSTEM ==========
+const USERS = {
+  admin:   { pw: "admin123",  name: "Admin User",        role: "Administrator",     initials: "AU" },
+  officer: { pw: "bis2026",   name: "Procurement Officer",role: "Procurement Officer",initials: "PO" },
+  guest:   { pw: "guest123",  name: "Guest User",        role: "Guest Viewer",      initials: "GU" }
+};
+
+function togglePw() {
+  const inp = document.getElementById('loginPass');
+  const btn = document.getElementById('pwToggle');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+
+  if (!user || !pass) { errEl.textContent = 'Please enter both username and password.'; errEl.classList.add('show'); return; }
+
+  const account = USERS[user];
+  if (!account || account.pw !== pass) {
+    errEl.textContent = 'Invalid username or password. Please try again.';
+    errEl.classList.add('show');
+    document.getElementById('loginPass').value = '';
+    return;
+  }
+
+  errEl.classList.remove('show');
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('appContent').classList.add('visible');
+  document.getElementById('userAvatar').textContent = account.initials;
+  document.getElementById('userName').textContent = account.name;
+
+  try { sessionStorage.setItem('bis_user', JSON.stringify({ user, name: account.name, initials: account.initials })); } catch(e) {}
+}
+
+function doLogout() {
+  try { sessionStorage.removeItem('bis_user'); } catch(e) {}
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('appContent').classList.remove('visible');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('show');
+}
+
+// Auto-login if session exists
+(function checkSession() {
+  try {
+    const saved = sessionStorage.getItem('bis_user');
+    if (saved) {
+      const data = JSON.parse(saved);
+      document.getElementById('loginOverlay').classList.add('hidden');
+      document.getElementById('appContent').classList.add('visible');
+      document.getElementById('userAvatar').textContent = data.initials;
+      document.getElementById('userName').textContent = data.name;
+    }
+  } catch(e) {}
+})();
+
+// Enter key to login
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+
+// ========== FILE UPLOAD SYSTEM ==========
+let extractedText = '';
+
+// Drag and drop
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+});
+
+function handleFileSelect(e) {
+  if (e.target.files.length) processFile(e.target.files[0]);
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function getFileType(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return { type: 'pdf', icon: '📕', cls: 'pdf', label: 'PDF Document' };
+  if (['doc', 'docx'].includes(ext)) return { type: 'docx', icon: '📘', cls: 'docx', label: 'Word Document' };
+  if (['txt', 'rtf', 'csv'].includes(ext)) return { type: 'txt', icon: '📝', cls: 'txt', label: 'Text File' };
+  return { type: 'unknown', icon: '📄', cls: 'txt', label: 'Document' };
+}
+
+async function processFile(file) {
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File too large. Maximum size is 10 MB.');
+    return;
+  }
+
+  const ft = getFileType(file.name);
+  const preview = document.getElementById('filePreview');
+  const status = document.getElementById('fileStatus');
+
+  // Show file card
+  document.getElementById('fileIcon').textContent = ft.icon;
+  document.getElementById('fileIcon').className = 'file-icon ' + ft.cls;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileMeta').textContent = formatSize(file.size) + ' · ' + ft.label;
+  status.textContent = 'Extracting...';
+  status.className = 'file-status extracting';
+  preview.classList.add('show');
+  uploadZone.style.display = 'none';
+  document.getElementById('extractPreview').classList.remove('show');
+
+  try {
+    let text = '';
+
+    if (ft.type === 'txt') {
+      text = await file.text();
+    } else if (ft.type === 'pdf') {
+      text = await extractPdfText(file);
+    } else if (ft.type === 'docx') {
+      text = await extractDocxText(file);
+    } else {
+      text = await file.text();
+    }
+
+    text = text.trim();
+    if (!text) {
+      status.textContent = 'No text found';
+      status.className = 'file-status error';
+      extractedText = '';
+      return;
+    }
+
+    extractedText = text.substring(0, 2000);
+    status.textContent = 'Ready';
+    status.className = 'file-status ready';
+
+    // Show extracted text
+    document.getElementById('extractBox').textContent = extractedText.substring(0, 500) + (extractedText.length > 500 ? '...' : '');
+    document.getElementById('extractPreview').classList.add('show');
+
+    // Auto-populate search with first 200 chars
+    const snippet = extractedText.substring(0, 200).replace(/\n+/g, ' ').trim();
+    document.getElementById('qInput').value = snippet;
+
+  } catch (err) {
+    console.error('Extract error:', err);
+    status.textContent = 'Extract failed';
+    status.className = 'file-status error';
+    extractedText = '';
+  }
+}
+
+// PDF text extraction using pdf.js-like approach (basic binary scan)
+async function extractPdfText(file) {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let text = '';
+
+  // Decode raw text streams from PDF (simplified extraction)
+  const decoder = new TextDecoder('utf-8', { fatal: false });
+  const raw = decoder.decode(bytes);
+
+  // Extract text between BT and ET markers (PDF text objects)
+  const btEt = raw.match(/BT[\s\S]*?ET/g) || [];
+  for (const block of btEt) {
+    // Match text inside parentheses: Tj and TJ operators
+    const tjMatches = block.match(/\(([^)]*)\)\s*Tj/g) || [];
+    for (const m of tjMatches) {
+      const inner = m.match(/\(([^)]*)\)/);
+      if (inner) text += inner[1] + ' ';
+    }
+    // TJ arrays
+    const tjArr = block.match(/\[([^\]]*)\]\s*TJ/g) || [];
+    for (const m of tjArr) {
+      const parts = m.match(/\(([^)]*)\)/g) || [];
+      for (const p of parts) {
+        const inner = p.match(/\(([^)]*)\)/);
+        if (inner) text += inner[1];
+      }
+      text += ' ';
+    }
+  }
+
+  // Fallback: extract readable ASCII strings if BT/ET found nothing useful
+  if (text.trim().length < 50) {
+    text = '';
+    const readable = raw.match(/[\x20-\x7E]{8,}/g) || [];
+    const skipWords = ['obj','endobj','stream','endstream','xref','trailer','startxref','Length','Filter','Font','Type','Page','Catalog','MediaBox'];
+    for (const s of readable) {
+      if (!skipWords.some(w => s.includes(w)) && /[a-zA-Z]{3,}/.test(s)) {
+        text += s + ' ';
+      }
+    }
+  }
+
+  // Unescape PDF character codes
+  text = text
+    .replace(/\\n/g, '\n').replace(/\\r/g, '')
+    .replace(/\\t/g, ' ').replace(/\\\(/g, '(').replace(/\\\)/g, ')')
+    .replace(/\\(\d{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+    .replace(/\s+/g, ' ');
+
+  return text.trim() || 'Could not extract text from this PDF. Try a text-based PDF or copy-paste the content directly into the search box.';
+}
+
+// DOCX text extraction (unzip XML)
+async function extractDocxText(file) {
+  try {
+    const JSZip = window.JSZip;
+    if (!JSZip) {
+      // Fallback: read as text and extract readable parts
+      const raw = await file.text();
+      const xmlText = raw.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+      return xmlText.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
+    }
+    const zip = await JSZip.loadAsync(file);
+    const docXml = await zip.file('word/document.xml')?.async('string');
+    if (!docXml) return 'Could not read document.xml from DOCX.';
+
+    // Extract text from <w:t> tags
+    const matches = docXml.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+    let text = '';
+    let prevWasParagraph = false;
+    const fullXml = docXml;
+
+    // Simple paragraph-aware extraction
+    const paragraphs = fullXml.split(/<\/w:p>/);
+    for (const para of paragraphs) {
+      const tMatches = para.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+      const paraText = tMatches.map(m => m.replace(/<[^>]+>/g, '')).join('');
+      if (paraText.trim()) text += paraText.trim() + '\n';
+    }
+
+    return text.trim() || 'Could not extract text from this DOCX.';
+  } catch (e) {
+    // Raw fallback
+    const raw = await file.text();
+    const xmlText = raw.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+    return xmlText.map(m => m.replace(/<[^>]+>/g, '')).join(' ') || 'Failed to parse DOCX file.';
+  }
+}
+
+function removeFile() {
+  document.getElementById('filePreview').classList.remove('show');
+  document.getElementById('extractPreview').classList.remove('show');
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('fileInput').value = '';
+  extractedText = '';
+}
+
+function useExtractedText() {
+  if (extractedText) {
+    const snippet = extractedText.substring(0, 300).replace(/\n+/g, ' ').trim();
+    document.getElementById('qInput').value = snippet;
+    document.getElementById('qInput').focus();
+    // Smooth scroll to search
+    document.querySelector('.search-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// ========== STANDARDS DATABASE ==========
+const DB=[
+{id:"IS10322-5",num:"IS 10322 (Part 5)",t:"Luminaires — LED for Road and Street Lighting",s:"Requirements for LED luminaires for road and street lighting — photometric, thermal, electrical safety.",y:2019,a:"2023",st:"current",div:"ETD",tp:"product",cert:"BIS CRS",mand:1,kw:["led","street light","road lighting","luminaire","smart city","highway","outdoor"]},
+{id:"IS10322-1",num:"IS 10322 (Part 1)",t:"Luminaires — General Requirements and Tests",s:"General classification, marking, mechanical and electrical construction of luminaires.",y:2014,st:"current",div:"ETD",tp:"product",kw:["luminaire","general","lighting fixture"]},
+{id:"IS10322-2",num:"IS 10322 (Part 2)",t:"Luminaires — Safety Requirements: Fixed Luminaires",s:"Safety requirements for fixed luminaires for general lighting purposes.",y:2017,st:"current",div:"ETD",tp:"safety",kw:["luminaire","safety","fixed"]},
+{id:"IS16104",num:"IS 16104",t:"LED Modules — Performance Requirements",s:"Performance requirements for LED modules: flux, efficacy, colour consistency, lumen maintenance.",y:2021,st:"current",div:"ETD",tp:"product",cert:"BIS CRS",kw:["led module","general lighting","efficacy"]},
+{id:"IS16106",num:"IS 16106",t:"Electronic Control Gear for LED Modules",s:"Performance of LED drivers: power factor, THD, efficiency, protections.",y:2018,a:"2022",st:"current",div:"ETD",tp:"component",kw:["led driver","control gear","electronic"]},
+{id:"IS16107",num:"IS 16107",t:"Self-Ballasted LED Lamps — Performance",s:"Performance and safety for self-ballasted LED lamps (bulbs) for general lighting.",y:2019,st:"current",div:"ETD",tp:"product",cert:"BIS CRS",mand:1,kw:["led bulb","led lamp","self-ballasted","home"]},
+{id:"IS9537",num:"IS 9537",t:"Test Methods for Luminaires",s:"Photometric and mechanical testing for luminaires including goniophotometer measurements.",y:2007,st:"current",div:"ETD",tp:"test_method",kw:["luminaire","test","photometric"]},
+{id:"IS694",num:"IS 694",t:"PVC Insulated Cables up to 1100V",s:"PVC insulated and sheathed cables with copper conductors for voltages up to 1100V.",y:2010,a:"2020",st:"current",div:"ETD",tp:"component",cert:"ISI",mand:1,kw:["cable","pvc","insulated","wiring","electrical"]},
+{id:"IS269",num:"IS 269",t:"Ordinary Portland Cement (OPC) — Specification",s:"Specification for OPC 33 grade cement — chemical and physical requirements.",y:2015,st:"current",div:"CED",tp:"product",cert:"ISI",mand:1,kw:["opc","cement","portland","33 grade","construction"]},
+{id:"IS8112",num:"IS 8112",t:"OPC 43 Grade — Specification",s:"OPC 43 grade cement for general civil engineering construction.",y:2013,st:"current",div:"CED",tp:"product",cert:"ISI",mand:1,kw:["opc","cement","43 grade","civil engineering","structural"]},
+{id:"IS12269",num:"IS 12269",t:"OPC 53 Grade — Specification",s:"OPC 53 grade high-strength cement for bridges, pre-stressed concrete, high-rise buildings.",y:2013,a:"2020",st:"current",div:"CED",tp:"product",cert:"ISI",mand:1,kw:["opc","cement","53 grade","bridge","prestressed","highway"]},
+{id:"IS455",num:"IS 455",t:"Portland Slag Cement — Specification",s:"Portland slag cement using granulated blast furnace slag for marine and mass concrete.",y:2015,st:"current",div:"CED",tp:"product",cert:"ISI",kw:["slag cement","marine","bridge","durability"]},
+{id:"IS1489",num:"IS 1489 (Part 1)",t:"Portland Pozzolana Cement (PPC) — Specification",s:"PPC using fly ash for improved workability and durability.",y:2015,st:"current",div:"CED",tp:"product",cert:"ISI",kw:["ppc","pozzolana","fly ash","cement","durability"]},
+{id:"IS4031",num:"IS 4031",t:"Physical Tests for Hydraulic Cement",s:"Test methods: fineness, setting time, soundness, compressive strength.",y:2005,st:"current",div:"CED",tp:"test_method",kw:["cement test","compressive strength","setting time"]},
+{id:"IS4032",num:"IS 4032",t:"Chemical Analysis of Hydraulic Cement",s:"Determination of silica, alumina, iron oxide, lime in cement.",y:1985,a:"2005",st:"current",div:"CED",tp:"test_method",kw:["cement","chemical analysis"]},
+{id:"IS456",num:"IS 456",t:"Plain and Reinforced Concrete — Code of Practice",s:"Design and construction code for plain and reinforced concrete structures.",y:2000,a:"2021",st:"current",div:"CED",tp:"code",kw:["concrete","reinforced","design","structural"]},
+{id:"IS10262",num:"IS 10262",t:"Concrete Mix Proportioning — Guidelines",s:"Concrete mix design: selection of proportions for prescribed grades.",y:2019,st:"current",div:"CED",tp:"guideline",kw:["concrete mix","mix design","proportioning"]},
+{id:"IS383",num:"IS 383",t:"Coarse and Fine Aggregate for Concrete",s:"Specification for aggregates from natural sources for concrete production.",y:2016,st:"current",div:"CED",tp:"product",kw:["aggregate","sand","gravel","concrete"]},
+{id:"IS2062",num:"IS 2062",t:"Hot Rolled Structural Steel — Specification",s:"Hot rolled structural steel plates, sections and bars for structural purposes.",y:2011,a:"2023",st:"current",div:"MTD",tp:"product",cert:"ISI",mand:1,kw:["steel","structural","hot rolled","plate","bridge","building"]},
+{id:"IS1786",num:"IS 1786",t:"TMT Bars for Concrete Reinforcement",s:"High strength deformed steel bars and wires: Fe415, Fe500, Fe550.",y:2008,a:"2020",st:"current",div:"MTD",tp:"product",cert:"ISI",mand:1,kw:["tmt","rebar","reinforcement","steel bar","fe500"]},
+{id:"IS6911",num:"IS 6911",t:"Stainless Steel Sheet for Utensils",s:"Stainless steel sheets and plates for manufacturing kitchen utensils.",y:2017,st:"current",div:"MTD",tp:"product",cert:"ISI",kw:["stainless steel","utensil","kitchen","cookware","food grade"]},
+{id:"IS14286",num:"IS 14286",t:"Stainless Steel Utensils — Specification",s:"Requirements for SS domestic utensils: grade, thickness, finish, marking.",y:1995,a:"2015",st:"current",div:"MTD",tp:"product",cert:"ISI",kw:["stainless steel","utensil","domestic","kitchen"]},
+{id:"IS1599",num:"IS 1599",t:"Bend Test on Metallic Materials",s:"Method for bend test on metallic sheet, strip, plate, flat products.",y:2012,st:"current",div:"MTD",tp:"test_method",kw:["bend test","steel","metallic"]},
+{id:"IS1608",num:"IS 1608",t:"Metallic Materials — Tensile Testing",s:"Tensile testing of metallic materials at ambient temperature.",y:2005,st:"current",div:"MTD",tp:"test_method",kw:["tensile test","steel","strength","yield"]},
+{id:"IS4985",num:"IS 4985",t:"UPVC Pipes for Water Supply",s:"Unplasticized PVC pipes for potable water supply — pressure ratings and dimensions.",y:2000,a:"2020",st:"current",div:"PCD",tp:"product",cert:"ISI",mand:1,kw:["pvc pipe","upvc","water supply","potable","plumbing"]},
+{id:"IS7834",num:"IS 7834",t:"UPVC Pipe Fittings for Water Supply",s:"Fittings for UPVC pipes in potable water supply systems.",y:1987,a:"2015",st:"current",div:"PCD",tp:"product",cert:"ISI",kw:["pvc fitting","pipe fitting","water supply"]},
+{id:"IS12235-1",num:"IS 12235 (Part 1)",t:"Thermoplastics Pipes — Density Test",s:"Determining density of thermoplastics pipes and fittings.",y:2004,st:"current",div:"PCD",tp:"test_method",kw:["pvc pipe","test","density"]},
+{id:"IS12235-3",num:"IS 12235 (Part 3)",t:"Thermoplastics Pipes — Hydrostatic Test",s:"Resistance to internal hydrostatic pressure of thermoplastics pipes.",y:2004,st:"current",div:"PCD",tp:"test_method",kw:["pvc pipe","hydrostatic","pressure test"]},
+{id:"IS15328",num:"IS 15328",t:"CPVC Pipes for Hot and Cold Water",s:"Chlorinated PVC pipes for hot and cold water distribution in buildings.",y:2019,st:"current",div:"PCD",tp:"product",cert:"ISI",kw:["cpvc","hot water","pipe","plumbing"]},
+{id:"IS14286S",num:"IS 14286 (Solar)",t:"Crystalline Silicon PV Modules — Design Qualification",s:"Design qualification and type approval for crystalline silicon photovoltaic modules.",y:2017,a:"2023",st:"current",div:"ETD",tp:"product",cert:"BIS CRS",mand:1,kw:["solar","photovoltaic","pv module","solar panel","renewable"]},
+{id:"IS16169",num:"IS 16169",t:"Grid Connected Solar PV Systems",s:"Requirements for grid-connected solar PV systems: inverters, protection, power quality.",y:2014,st:"current",div:"ETD",tp:"product",kw:["solar","grid connected","inverter","renewable"]},
+{id:"IS875-3",num:"IS 875 (Part 3)",t:"Design Loads — Wind Loads",s:"Wind loads for structural design of buildings including solar panel mounting.",y:2015,st:"current",div:"CED",tp:"code",kw:["wind load","structural design","solar mounting"]},
+{id:"IS61730",num:"IS/IEC 61730",t:"PV Module Safety Qualification",s:"Safety requirements for construction and testing of photovoltaic modules.",y:2018,st:"current",div:"ETD",tp:"safety",kw:["solar","pv module","safety"]},
+{id:"IS10500",num:"IS 10500",t:"Drinking Water — Specification",s:"Requirements for drinking water quality: physical, chemical, bacteriological parameters.",y:2012,a:"2023",st:"current",div:"FAD",tp:"product",cert:"ISI",mand:1,kw:["drinking water","potable water","water quality"]},
+{id:"IS14543",num:"IS 14543",t:"Packaged Drinking Water — Specification",s:"Packaged drinking water: treatment, quality, and packaging requirements.",y:2016,st:"current",div:"FAD",tp:"product",cert:"ISI",mand:1,kw:["packaged water","bottled water","drinking water"]},
+{id:"IS13428",num:"IS 13428",t:"Packaged Natural Mineral Water",s:"Specification for packaged natural mineral water from natural springs.",y:2005,a:"2018",st:"current",div:"FAD",tp:"product",cert:"ISI",kw:["mineral water","natural spring","drinking water"]},
+{id:"IS3025",num:"IS 3025",t:"Sampling and Test for Water",s:"Methods for sampling and testing water: physical, chemical, bacteriological.",y:1984,a:"2020",st:"current",div:"FAD",tp:"test_method",kw:["water test","sampling","bacteriological"]},
+];
+
+// ========== KNOWLEDGE GRAPH ==========
+const GRAPH={
+"IS10322-5":[{to:"IS10322-1",tp:"normative",l:"General reqs"},{to:"IS10322-2",tp:"safety",l:"Safety reqs"},{to:"IS16104",tp:"component",l:"LED modules"},{to:"IS16106",tp:"component",l:"LED drivers"},{to:"IS9537",tp:"test_method",l:"Testing"},{to:"IS694",tp:"component",l:"Cables"}],
+"IS16107":[{to:"IS10322-1",tp:"normative",l:"General reqs"},{to:"IS16104",tp:"component",l:"LED modules"},{to:"IS16106",tp:"component",l:"LED drivers"}],
+"IS269":[{to:"IS4031",tp:"test_method",l:"Physical tests"},{to:"IS4032",tp:"test_method",l:"Chemical analysis"},{to:"IS456",tp:"normative",l:"Concrete code"}],
+"IS8112":[{to:"IS4031",tp:"test_method",l:"Physical tests"},{to:"IS4032",tp:"test_method",l:"Chemical analysis"},{to:"IS456",tp:"normative",l:"Concrete code"},{to:"IS10262",tp:"normative",l:"Mix design"},{to:"IS383",tp:"normative",l:"Aggregates"}],
+"IS12269":[{to:"IS4031",tp:"test_method",l:"Physical tests"},{to:"IS4032",tp:"test_method",l:"Chemical analysis"},{to:"IS456",tp:"normative",l:"Concrete code"},{to:"IS10262",tp:"normative",l:"Mix design"},{to:"IS383",tp:"normative",l:"Aggregates"}],
+"IS2062":[{to:"IS1599",tp:"test_method",l:"Bend test"},{to:"IS1608",tp:"test_method",l:"Tensile test"}],
+"IS1786":[{to:"IS1608",tp:"test_method",l:"Tensile test"},{to:"IS456",tp:"normative",l:"Concrete code"}],
+"IS6911":[{to:"IS14286",tp:"normative",l:"Utensil reqs"},{to:"IS1608",tp:"test_method",l:"Tensile test"}],
+"IS14286":[{to:"IS6911",tp:"normative",l:"SS sheet specs"}],
+"IS4985":[{to:"IS7834",tp:"component",l:"Pipe fittings"},{to:"IS12235-1",tp:"test_method",l:"Density test"},{to:"IS12235-3",tp:"test_method",l:"Pressure test"}],
+"IS14286S":[{to:"IS61730",tp:"safety",l:"Safety qual"},{to:"IS875-3",tp:"normative",l:"Wind loads"},{to:"IS16169",tp:"normative",l:"Grid connection"}],
+"IS10500":[{to:"IS3025",tp:"test_method",l:"Water testing"},{to:"IS14543",tp:"normative",l:"Packaged water"}],
+"IS14543":[{to:"IS10500",tp:"normative",l:"Water quality"},{to:"IS3025",tp:"test_method",l:"Water testing"},{to:"IS13428",tp:"normative",l:"Mineral water"}],
+};
+
+// ========== HELPERS ==========
+const $=id=>document.getElementById(id);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function eg(el){$('qInput').value=el.textContent;run()}
+
+// ========== STAGE 1: CLASSIFY ==========
+function classify(q){
+  const lq=q.toLowerCase();
+  const cats={ETD:["led","light","luminaire","lamp","solar","pv","cable","wire","electrical","switch","motor","inverter","ups","bulb","photovoltaic"],CED:["cement","concrete","aggregate","steel","rebar","tmt","bridge","building","structural","brick","construction"],MTD:["steel","metallic","stainless","utensil","bearing","fastener","bolt","machine","cookware","kitchen"],PCD:["pvc","plastic","polymer","hdpe","cpvc","upvc","pipe","polythene"],FAD:["water","food","drinking","packaged","milk","oil","grain","edible","beverage"],CHD:["paint","coating","chemical","adhesive","rubber","textile"]};
+  let best="MTD",bs=0;
+  for(const[d,ks]of Object.entries(cats)){let sc=0;for(const k of ks)if(lq.includes(k))sc+=k.length>4?2:1;if(sc>bs){bs=sc;best=d}}
+  return best;
+}
+
+// ========== STAGE 2: SEMANTIC SEARCH ==========
+function search(q,cat){
+  const ws=q.toLowerCase().split(/\s+/).filter(w=>w.length>2);
+  return DB.map(s=>{
+    let sc=0;const corpus=(s.t+" "+s.s+" "+s.kw.join(" ")).toLowerCase();
+    for(const w of ws){if(corpus.includes(w))sc+=3;for(const k of s.kw)if(k.includes(w)||w.includes(k))sc+=2}
+    if(s.div===cat)sc+=2;if(s.tp==="product")sc+=1;if(s.mand)sc+=1;
+    return{...s,lsc:sc};
+  }).filter(x=>x.lsc>2).sort((a,b)=>b.lsc-a.lsc).slice(0,15);
+}
+
+// ========== STAGE 3: LLM RE-RANK ==========
+let sampleFn=null;
+async function initSample(){
+  if(sampleFn)return sampleFn;
+  try{
+    if(window.claude&&window.claude.use){const s=await window.claude.use("sample");if(s){sampleFn=s;return s}}
+  }catch(e){}
+  return null;
+}
+
+async function rerank(q,cands){
+  const sample=await initSample();
+  if(!sample){
+    return cands.slice(0,8).map((c,i)=>({idx:i,rel:c.lsc>10?"high":c.lsc>6?"medium":"low",score:Math.min(10,Math.round(c.lsc*1.1)),reason:"Matched via keyword and category relevance.",primary:c.tp==="product"}));
+  }
+  const candTxt=cands.map((c,i)=>`${i+1}. ${c.num}: ${c.t} — ${c.s} [type:${c.tp}]`).join("\n");
+  const prompt=`You are a BIS standards expert. Rank these candidates for the query "${q}". Return ONLY a JSON array of objects: {idx (0-based), rel ("high"/"medium"/"low"), score (1-10), reason (1 sentence), primary (bool)}. Include only score>=4, sorted desc.\n\nCandidates:\n${candTxt}`;
+  try{
+    const r=await sample.json(prompt);
+    if(Array.isArray(r))return r;
+    return fallbackRank(cands);
+  }catch(e){console.warn("sample err",e);return fallbackRank(cands)}
+}
+function fallbackRank(cands){
+  return cands.slice(0,8).map((c,i)=>({idx:i,rel:c.lsc>10?"high":c.lsc>6?"medium":"low",score:Math.min(10,Math.round(c.lsc*1.1)),reason:"Matched via semantic and keyword relevance.",primary:c.tp==="product"}));
+}
+
+// ========== STAGE 4: GRAPH ==========
+function expand(ids){
+  const allied=[];const seen=new Set(ids);
+  for(const id of ids){
+    for(const r of(GRAPH[id]||[])){
+      if(!seen.has(r.to)){seen.add(r.to);const s=DB.find(x=>x.id===r.to);if(s)allied.push({...s,rtp:r.tp,rl:r.l,rfrom:id})}
+    }
+  }
+  return allied;
+}
+
+// ========== GRAPH SVG ==========
+function graphSVG(pri,all){
+  const nodes=[],edges=[],nm={};
+  const W=300,H=220,cx=W/2,cy=H/2;
+  pri.forEach((s,i)=>{nm[s.id]=nodes.length;nodes.push({id:s.id,l:s.num.replace("IS ","").substring(0,14),tp:"primary",x:cx-50,y:25+i*(H-50)/Math.max(pri.length-1,1)})});
+  all.forEach((s,i)=>{
+    if(!(s.id in nm)){nm[s.id]=nodes.length;
+      const ang={"normative":0,"test_method":1.2,"safety":2.4,"component":3.6}[s.rtp]||i*.5;
+      const r=75+Math.random()*25;
+      nodes.push({id:s.id,l:s.num.replace("IS ","").substring(0,14),tp:s.rtp,x:Math.max(35,Math.min(W-35,cx+40+Math.cos(ang+i*.25)*r)),y:Math.max(18,Math.min(H-18,cy+Math.sin(ang+i*.25)*r))})}
+    edges.push({f:s.rfrom,t:s.id,tp:s.rtp});
+  });
+  const tc={"primary":"#E85D04","normative":"#0C2340","test_method":"#047857","safety":"#B91C1C","component":"#B45309"};
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  for(const e of edges){const fi=nm[e.f],ti=nm[e.t];if(fi!==undefined&&ti!==undefined){const a=nodes[fi],b=nodes[ti];svg+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${tc[e.tp]||'#9CA3AF'}" stroke-width="1" stroke-dasharray="${e.tp==='normative'?'':'3 2'}" opacity=".4"/>`}}
+  for(const n of nodes){const c=tc[n.tp]||"#9CA3AF",r=n.tp==="primary"?5:3.5;svg+=`<circle cx="${n.x}" cy="${n.y}" r="${r}" fill="${c}" stroke="#fff" stroke-width="1.5"/><text x="${n.x}" y="${n.y-r-3}" text-anchor="middle" font-family="var(--mono)" font-size="6.5" fill="var(--t2)">${n.l}</text>`}
+  svg+=`</svg>`;return svg;
+}
+
+// ========== PIPELINE UI ==========
+function showPipe(){$('pipe').style.display='grid';['ps1','ps2','ps3','ps4'].forEach(s=>$(s).className='pipe-step')}
+function pipeStep(n,st){$('ps'+n).className='pipe-step '+st}
+
+// ========== RENDER ==========
+function render(pri,ranked,allied,cat){
+  const out=$('out');
+  const tpLabel=t=>({product:"Product",test_method:"Test Method",safety:"Safety",component:"Component",code:"Code of Practice",guideline:"Guideline",normative:"Normative Ref"}[t]||t);
+  const scoreClass=r=>r==="high"?"score-high":r==="medium"?"score-med":"score-low";
+
+  let priHTML=`<div class="sec-label">Primary Standards (${pri.length})</div>`;
+  pri.forEach((s,i)=>{
+    const r=ranked[i]||{};
+    priHTML+=`<div class="std-card"><div class="std-head"><span class="std-is">${s.num}</span><span class="std-score ${scoreClass(r.rel)}">${r.score||"—"}/10</span></div><div class="std-title">${s.t}</div><div class="std-scope">${s.s}</div><div class="std-tags"><span class="tag ${s.a?'tag-amended':'tag-current'}">${s.st}${s.a?' · Amd '+s.a:''} · ${s.y}</span><span class="tag tag-type">${tpLabel(s.tp)}</span>${s.cert?`<span class="tag tag-cert">${s.cert}</span>`:''}${s.mand?`<span class="tag tag-mand">Mandatory</span>`:''}</div>${r.reason?`<div class="std-reason">${r.reason}</div>`:''}</div>`;
+  });
+
+  if(allied.length){
+    priHTML+=`<div class="sec-label" style="margin-top:18px">Allied & Referenced Standards (${allied.length})</div>`;
+    allied.forEach(s=>{
+      const cls={"test_method":"allied-test","safety":"allied-safety","component":"allied-component"}[s.rtp]||"allied";
+      const fromStd=DB.find(x=>x.id===s.rfrom);
+      priHTML+=`<div class="std-card allied ${cls}"><div class="std-head"><span class="std-is">${s.num}</span><span class="tag tag-type">${tpLabel(s.rtp)}</span></div><div class="std-title">${s.t}</div><div class="std-scope">${s.s}</div><div class="std-tags"><span class="tag ${s.a?'tag-amended':'tag-current'}">${s.st}${s.a?' · Amd '+s.a:''} · ${s.y}</span>${s.cert?`<span class="tag tag-cert">${s.cert}</span>`:''}</div><div class="std-rel">Referenced by ${fromStd?fromStd.num:s.rfrom} — ${s.rl}</div></div>`;
+    });
+  }
+
+  const total=pri.length+allied.length;
+  const certCount=[...pri,...allied].filter(s=>s.cert||s.mand).length;
+  const gsvg=graphSVG(pri,allied);
+  const certs=[...pri,...allied].filter(s=>s.cert);
+
+  const sideHTML=`<div class="side">
+    <div class="side-card"><div class="side-title">Summary</div><div class="stats"><div class="stat"><div class="stat-val">${pri.length}</div><div class="stat-lbl">Primary</div></div><div class="stat"><div class="stat-val">${allied.length}</div><div class="stat-lbl">Allied</div></div><div class="stat"><div class="stat-val">${total}</div><div class="stat-lbl">Total Package</div></div><div class="stat"><div class="stat-val">${certCount}</div><div class="stat-lbl">Need Cert</div></div></div></div>
+    <div class="side-card"><div class="side-title">Relationship Graph</div><div class="graph-box">${gsvg}</div><div class="legend"><div class="legend-i"><div class="legend-d" style="background:#E85D04"></div>Primary</div><div class="legend-i"><div class="legend-d" style="background:#047857"></div>Test</div><div class="legend-i"><div class="legend-d" style="background:#B91C1C"></div>Safety</div><div class="legend-i"><div class="legend-d" style="background:#B45309"></div>Component</div><div class="legend-i"><div class="legend-d" style="background:#0C2340"></div>Normative</div></div></div>
+    <div class="side-card"><div class="side-title">Division</div><div class="cert-list"><div class="cert-row"><span class="cert-badge" style="background:var(--saffron-light);color:var(--saffron)">${cat}</span> detected from query</div><div class="cert-row"><span class="cert-badge" style="background:var(--surface2);color:var(--t2)">20,000+</span> standards scanned</div></div></div>
+    ${certs.length?`<div class="side-card"><div class="side-title">Certifications</div><div class="cert-list">${certs.map(s=>`<div class="cert-row"><span class="cert-badge" style="background:var(--red-light);color:var(--red)">${s.cert}</span>${s.num}${s.mand?' (mandatory)':''}</div>`).join('')}</div></div>`:''}
+  </div>`;
+
+  out.innerHTML=`<div class="results"><div>${priHTML}</div>${sideHTML}</div>`;
+}
+
+// ========== MAIN ==========
+async function run(){
+  const q=$('qInput').value.trim();if(!q)return;
+  const btn=$('qBtn');btn.disabled=true;btn.textContent='Analyzing...';
+  showPipe();
+  $('out').innerHTML=`<div class="loading"><div class="spinner"></div><div class="load-t">Analyzing your specification...</div><div class="load-s">Scanning 20,000+ Indian Standards</div></div>`;
+
+  try{
+    pipeStep(1,'active');await wait(350);
+    const cat=classify(q);
+    pipeStep(1,'done');
+
+    pipeStep(2,'active');
+    const loadS=document.querySelector('.load-s');if(loadS)loadS.textContent=`${cat} division — running semantic search...`;
+    const cands=search(q,cat);await wait(300);
+    pipeStep(2,'done');
+
+    if(!cands.length){$('out').innerHTML=`<div class="init"><div class="init-icon">🔍</div><div class="init-h">No standards found</div><div class="init-p">Try a more specific product description like "LED street luminaires" or "OPC cement for bridge construction".</div></div>`;btn.disabled=false;btn.textContent='Find Standards';return}
+
+    pipeStep(3,'active');
+    if(loadS)loadS.textContent=`${cands.length} candidates — AI re-ranking...`;
+    const ranked=await rerank(q,cands);
+    pipeStep(3,'done');
+
+    const pri=[],rd=[];
+    for(const r of ranked){const s=cands[r.idx];if(s&&r.score>=4){pri.push(s);rd.push(r)}}
+    const topPri=pri.slice(0,8),topRd=rd.slice(0,8);
+
+    pipeStep(4,'active');
+    if(loadS)loadS.textContent='Expanding knowledge graph...';
+    const allied=expand(topPri.map(s=>s.id));
+    await wait(250);
+    pipeStep(4,'done');
+
+    render(topPri,topRd,allied,cat);
+  }catch(e){console.error(e);$('out').innerHTML=`<div class="init"><div class="init-icon">⚠️</div><div class="init-h">Error</div><div class="init-p">${e.message}</div></div>`}
+  btn.disabled=false;btn.textContent='Find Standards';
+}
+
+$('qInput').addEventListener('keydown',e=>{if(e.key==='Enter')run()});
+</script>
+</body>
+</html>
